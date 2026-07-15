@@ -1,0 +1,26 @@
+;; data/datascript-tx.edn — DataScript tx-data derived from
+;; src/association/facts.cljc `association.facts/catalog`
+;; (ADR-2607141700 Wave 0). Same shape as sibling files.
+
+[#:association-rule{:id "ama.ama-history"
+                     :title "AMA History"
+                     :association "ama"
+                     :isic "8621"
+                     :country "USA"
+                     :kind :governance-program
+                     :url "https://www.ama-assn.org/about/ama-history/ama-history"
+                     :url-provenance :official-association-site
+                     :established-date "1847"
+                     :retrieved-at "2026-07-16"
+                     :topic [:governance]}
+ #:association-rule{:id "ama.code-of-medical-ethics"
+                     :title "Code of Medical Ethics"
+                     :association "ama"
+                     :isic "8621"
+                     :country "USA"
+                     :kind :self-regulatory-code
+                     :url "https://www.ama-assn.org/about/ethics/why-does-medical-profession-need-code-ethics"
+                     :url-provenance :official-association-site
+                     :established-date "1847"
+                     :retrieved-at "2026-07-16"
+                     :topic [:ethics :medical-ethics]}]
