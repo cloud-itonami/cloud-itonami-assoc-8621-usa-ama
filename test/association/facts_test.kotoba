@@ -1,10 +1,11 @@
 (ns association.facts-test
   (:require [clojure.test :refer [deftest is]]
+            [clojure.string :as str]
             [association.facts :as facts]))
 
 (deftest ama-has-spec-basis
   (let [sb (facts/spec-basis "ama")]
-    (is (= 2 (count sb)))
+    (is (= 6 (count sb)))
     (is (every? #(= "8621" (:association-rule/isic %)) sb))
     (is (every? #(= "USA" (:association-rule/country %)) sb))))
 
@@ -19,7 +20,59 @@
     (is (= ["wef"] (:missing-associations c)))))
 
 (deftest by-topic-filters
-  (is (= ["ama.code-of-medical-ethics"]
+  (is (= ["ama.code-of-medical-ethics"
+          "ama.principles-of-medical-ethics"
+          "ama.declaration-of-professional-responsibility"
+          "ama.council-ethical-judicial-affairs"]
          (mapv :association-rule/id (facts/by-topic "ama" :ethics))))
+  (is (= ["ama.ama-history"
+          "ama.principles-of-medical-ethics"
+          "ama.council-ethical-judicial-affairs"]
+         (mapv :association-rule/id (facts/by-topic "ama" :governance))))
+  (is (= ["ama.cpt"] (mapv :association-rule/id (facts/by-topic "ama" :coding))))
   (is (empty? (facts/by-topic "ama" :labor)))
   (is (empty? (facts/by-topic "wef" :governance))))
+
+(deftest ids-are-unique
+  ;; A duplicate id is silently destructive: :association-rule/id is
+  ;; :db.unique/identity, so a second entry with the same id does not arrive
+  ;; as a second entity -- it overwrites the first.
+  (let [ids (mapv :association-rule/id (facts/spec-basis "ama"))]
+    (is (= (count ids) (count (distinct ids))))))
+
+(deftest every-entry-cites-an-official-ama-page
+  ;; The whole value of this repo is that a rule here has a citation someone
+  ;; can open. An entry whose url is not on the association's own domain is
+  ;; not a weaker citation, it is a different claim.
+  (doseq [e (facts/spec-basis "ama")]
+    (let [url (:association-rule/url e)]
+      (is (string? url))
+      (is (some? (re-matches #"https://([a-z0-9-]+\.)*ama-assn\.org/.*" url))
+          (str (:association-rule/id e) " must cite ama-assn.org, got " url))
+      (is (= :official-association-site (:association-rule/url-provenance e))))))
+
+(deftest dates-are-well-formed
+  ;; Year-only, year-month and full dates all appear here, each because the
+  ;; cited page states exactly that much.
+  ;;
+  ;; This pins the SHAPE only, and the difference matters: "1957-06-07" passes
+  ;; here even though the cited page says only "June 1957". No assertion in
+  ;; this repo can catch a date that is finer than its page -- that is settled
+  ;; when the page is fetched and read, and afterwards only by re-reading it.
+  ;; What this catches is a malformed or garbage date, which is a different
+  ;; and lesser claim.
+  (doseq [e (facts/spec-basis "ama")
+          k [:association-rule/established-date :association-rule/last-revised-date]]
+    (when-let [d (get e k)]
+      (is (some? (re-matches #"\d{4}(-\d{2}(-\d{2})?)?" d))
+          (str (:association-rule/id e) " " k " = " d)))))
+
+(deftest an-absent-date-stays-absent
+  ;; Two of the six cite pages that state no founding year. Recording a date
+  ;; for them would be invention, so the key must be missing -- not nil, not
+  ;; an empty string, and not a year borrowed from the association itself.
+  (let [by-id (into {} (map (juxt :association-rule/id identity))
+                    (facts/spec-basis "ama"))]
+    (doseq [id ["ama.council-ethical-judicial-affairs" "ama.cpt"]]
+      (is (not (contains? (get by-id id) :association-rule/established-date))
+          (str id " cites a page with no founding year")))))

@@ -14,21 +14,41 @@
   this table has NO spec-basis, full stop; extend `catalog`, do not
   invent an id/url/date.
 
-  aha.org (American Hospital Association) was attempted first this
-  tick but blocked WebFetch entirely (HTTP 403 across multiple pages,
-  including /about/history, /125, and /about) -- abandoned without
-  forcing it, pivoted to AMA instead.
+  aha.org (American Hospital Association) was attempted first in the
+  seeding tick but blocked WebFetch entirely (HTTP 403 across multiple
+  pages, including /about/history, /125, and /about) -- abandoned
+  without forcing it, pivoted to AMA instead.
 
-  Both entries were directly WebFetch-verified against
-  ama-assn.org's own pages. Neither states a specific month/day for
-  its 1847 founding -- 'AMA History' confirms the 1847 establishment
-  year but no month/day; 'Why does the medical profession need a code
-  of ethics?' confirms the Code of Medical Ethics 'was first adopted at
-  the AMA's founding meeting in 1847', likewise year-only. Both
-  :established-date values are therefore deliberately year-only rather
-  than invented full dates (secondary sources place the founding at
-  May 7, 1847 in Philadelphia, but that specific date was not directly
-  confirmed on ama-assn.org itself).")
+  Every entry is cited to a page on ama-assn.org (or its
+  code-medical-ethics subdomain), and every date below is the
+  granularity the cited page itself states -- never a finer one.
+
+  Seeded 2026-07-16 (retrieved-at \"2026-07-16\"): 'AMA History' confirms
+  the 1847 establishment year but no month/day; 'Why does the medical
+  profession need a code of ethics?' confirms the Code of Medical Ethics
+  'was first adopted at the AMA's founding meeting in 1847', likewise
+  year-only. Both are therefore deliberately year-only rather than
+  invented full dates (secondary sources place the founding at May 7,
+  1847 in Philadelphia, but that specific date was not directly
+  confirmed on ama-assn.org itself).
+
+  Extended 2026-09-10 (retrieved-at \"2026-09-10\") with four entries,
+  each fetched and read before it was written down:
+
+    - Principles of Medical Ethics -- the page states verbatim 'Adopted
+      June 1957; revised June 1980; revised June 2001', so this is the
+      first entry here carrying a month, and the first to use
+      :last-revised-date at all.
+    - Declaration of Professional Responsibility -- the page states
+      'Adopted by the AMA House of Delegates on Dec. 4, 2001', a full
+      date, so a full date is recorded.
+    - Council on Ethical & Judicial Affairs (CEJA) -- the body that
+      maintains the Code of Medical Ethics. The page states no founding
+      year, so :established-date is ABSENT rather than guessed.
+    - CPT (Current Procedural Terminology) -- likewise no creation year
+      on the page, so likewise absent. A missing date is a fact about
+      the citation, not a gap to be filled from memory."
+  )
 
 (def catalog
   "assoc-slug -> vector of self-regulatory rule entries."
@@ -54,7 +74,50 @@
      :association-rule/url-provenance :official-association-site
      :association-rule/established-date "1847"
      :association-rule/retrieved-at "2026-07-16"
-     :association-rule/topic #{:ethics :medical-ethics}}]})
+     :association-rule/topic #{:ethics :medical-ethics}}
+    {:association-rule/id "ama.principles-of-medical-ethics"
+     :association-rule/title "AMA Principles of Medical Ethics"
+     :association-rule/association "ama"
+     :association-rule/isic "8621"
+     :association-rule/country "USA"
+     :association-rule/kind :self-regulatory-code
+     :association-rule/url "https://code-medical-ethics.ama-assn.org/principles"
+     :association-rule/url-provenance :official-association-site
+     :association-rule/established-date "1957-06"
+     :association-rule/last-revised-date "2001-06"
+     :association-rule/retrieved-at "2026-09-10"
+     :association-rule/topic #{:ethics :governance}}
+    {:association-rule/id "ama.declaration-of-professional-responsibility"
+     :association-rule/title "AMA Declaration of Professional Responsibility"
+     :association-rule/association "ama"
+     :association-rule/isic "8621"
+     :association-rule/country "USA"
+     :association-rule/kind :self-regulatory-code
+     :association-rule/url "https://www.ama-assn.org/delivering-care/ethics/ama-declaration-professional-responsibility"
+     :association-rule/url-provenance :official-association-site
+     :association-rule/established-date "2001-12-04"
+     :association-rule/retrieved-at "2026-09-10"
+     :association-rule/topic #{:ethics :professional-responsibility}}
+    {:association-rule/id "ama.council-ethical-judicial-affairs"
+     :association-rule/title "Council on Ethical & Judicial Affairs (CEJA)"
+     :association-rule/association "ama"
+     :association-rule/isic "8621"
+     :association-rule/country "USA"
+     :association-rule/kind :governance-program
+     :association-rule/url "https://www.ama-assn.org/councils/council-ethical-judicial-affairs"
+     :association-rule/url-provenance :official-association-site
+     :association-rule/retrieved-at "2026-09-10"
+     :association-rule/topic #{:governance :ethics}}
+    {:association-rule/id "ama.cpt"
+     :association-rule/title "CPT® (Current Procedural Terminology)"
+     :association-rule/association "ama"
+     :association-rule/isic "8621"
+     :association-rule/country "USA"
+     :association-rule/kind :professional-standard
+     :association-rule/url "https://www.ama-assn.org/practice-management/cpt"
+     :association-rule/url-provenance :official-association-site
+     :association-rule/retrieved-at "2026-09-10"
+     :association-rule/topic #{:coding :professional-standard}}]})
 
 (defn spec-basis [assoc-slug] (get catalog assoc-slug))
 

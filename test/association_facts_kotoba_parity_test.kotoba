@@ -1,5 +1,5 @@
 (ns association-facts-kotoba-parity-test
-  "The AMA catalog in .cljc and in .kotoba, field by field.
+  "The AMA catalog in Clojure and in .kotoba, field by field.
 
   Both are readings of the same `data/datascript-tx.edn`, so this is not two
   implementations of a rule; it is one body of facts written twice, and the
@@ -11,7 +11,12 @@
   `:association-rule/topic` is a SET. A set has no order and `topic` is indexed
   by position, so the port chose the order the data file writes; the assertion
   below compares against that written order rather than against `seq` on a set,
-  which is not stable to rely on."
+  which is not stable to rely on.
+
+  `last-revised-date` is compared even though only one entry carries it: a
+  field the port answers for and the suite never asks about is a field that
+  can be wrong forever. The entries that lack it must answer `none`, which is
+  the same comparison run against nil."
   (:require [clojure.test :refer [deftest is testing]]
             [association.facts :as facts]
             [kotoba.compiler.core :as compiler]
@@ -25,16 +30,23 @@
 (def ^:private slug "ama")
 (def ^:private fields
   ["id" "title" "association" "isic" "country" "kind" "url" "url-provenance"
-   "established-date" "retrieved-at"])
+   "established-date" "last-revised-date" "retrieved-at"])
 (def ^:private kw->field
   {"id" :association-rule/id "title" :association-rule/title
    "association" :association-rule/association "isic" :association-rule/isic
    "country" :association-rule/country "kind" :association-rule/kind
    "url" :association-rule/url "url-provenance" :association-rule/url-provenance
    "established-date" :association-rule/established-date
+   "last-revised-date" :association-rule/last-revised-date
    "retrieved-at" :association-rule/retrieved-at})
 (def ^:private entries (vec (facts/spec-basis slug)))
-(def ^:private topic-order [["governance"] ["ethics" "medical-ethics"]])
+(def ^:private topic-order
+  [["governance"]
+   ["ethics" "medical-ethics"]
+   ["ethics" "governance"]
+   ["ethics" "professional-responsibility"]
+   ["governance" "ethics"]
+   ["coding" "professional-standard"]])
 
 (deftest the-fixture-reads-a-real-catalog
   ;; An empty catalog compares equal to an empty port.
@@ -59,18 +71,26 @@
           "one number for every entry is the mistake this invites")
       (is (= (set names)
              (set (map name (:association-rule/topic (nth entries i)))))
-          "the written order must name exactly the set the cljc holds")
+          "the written order must name exactly the set the catalog holds")
       (doseq [[t nm] (map-indexed vector names)]
         (is (= nm (present (call 'topic slug i t))))))))
 
 (deftest by-topic-answers-the-same-entries
   (doseq [names topic-order t names]
     (testing t
-      (let [cljc (mapv :association-rule/id (facts/by-topic slug (keyword t)))]
-        (is (= (count cljc) (call 'by-topic-count slug t)))
-        (is (= (first cljc) (present (call 'by-topic-id slug t 0)))))))
+      (let [clj (mapv :association-rule/id (facts/by-topic slug (keyword t)))]
+        (is (= (count clj) (call 'by-topic-count slug t)))
+        (is (= (first clj) (present (call 'by-topic-id slug t 0)))))))
   (is (zero? (call 'by-topic-count slug "no-such-topic")))
   (is (nil? (present (call 'by-topic-id slug "no-such-topic" 0)))))
+
+(deftest an-entry-past-the-end-is-not-invented
+  ;; `entry-count` and `valid-entry?` are two numbers that must move together;
+  ;; when the catalog grew from two to six, an untouched bound would have kept
+  ;; answering for the first two and denied the rest.
+  (is (nil? (present (call 'entry-field slug (count entries) "id"))))
+  (is (nil? (present (call 'entry-field slug -1 "id"))))
+  (is (zero? (call 'topic-count slug (count entries)))))
 
 (deftest an-unknown-association-is-covered-by-nothing
   (doseq [other ["zzz" ""]]
@@ -78,7 +98,7 @@
     (is (zero? (call 'entry-count other)))
     (is (nil? (present (call 'entry-field other 0 "id"))))
     (is (nil? (present (call 'coverage-note other))))
-    (is (nil? (facts/spec-basis other)) "and the cljc agrees")))
+    (is (nil? (facts/spec-basis other)) "and the Clojure catalog agrees")))
 
 (deftest the-module-compiles-for-every-target-it-claims
   (doseq [target [:js-kotoba-v1 :wasm32-kotoba-v1 :x86_64-kotoba-v1 :aarch64-kotoba-v1]]
