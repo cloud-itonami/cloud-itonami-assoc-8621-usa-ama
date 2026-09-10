@@ -46,21 +46,54 @@ fabricate one.
 
 ## Data
 
-- `src/association/facts.cljc` — the catalog, source of truth.
+- `src/association/facts.kotoba` — the catalog, source of truth.
+- `src/association_facts.kotoba` — the same catalog as Kotoba, which
+  reaches the oracle, wasm and both native ISAs.
 - `schema/association-rule.edn` — DataScript schema.
 - `data/datascript-tx.edn` — derived DataScript tx-data (query this
   alongside other `cloud-itonami`/`etzhayyim` compliance-fact sources via
   `com-junkawasaki/root`'s `scripts/compliance-fact-query.cljs`).
 
-The American Hospital Association (`aha.org`) was attempted first this
-tick but blocked WebFetch entirely across multiple pages — abandoned
-without forcing it. Both entries here instead were directly
-WebFetch-verified against
-[ama-assn.org](https://www.ama-assn.org/)'s own pages: **AMA History**
-(confirms the 1847 founding year) and **Code of Medical Ethics** (first
-adopted at the AMA's founding meeting in 1847). Neither page states a
-specific month/day, so both `:association-rule/established-date`
-values are deliberately year-only rather than invented full dates.
+**Six entries**, every one of them fetched and read before it was
+written down, and every one citing a page on `ama-assn.org` or its
+`code-medical-ethics` subdomain. All six were re-fetched on 2026-09-10
+and returned HTTP 200.
+
+The American Hospital Association (`aha.org`) was attempted first when
+this repo was seeded but blocked WebFetch entirely across multiple
+pages — abandoned without forcing it.
+
+Dates are recorded at **the granularity the cited page states, and no
+finer**:
+
+| Entry | Date recorded | Because the page says |
+|---|---|---|
+| AMA History | `1847` | founding year, no month/day |
+| Code of Medical Ethics | `1847` | "first adopted at the AMA's founding meeting in 1847" |
+| Principles of Medical Ethics | `1957-06`, revised `2001-06` | "Adopted June 1957; revised June 1980; revised June 2001" |
+| Declaration of Professional Responsibility | `2001-12-04` | "Adopted by the AMA House of Delegates on Dec. 4, 2001" |
+| Council on Ethical & Judicial Affairs | *(absent)* | states no founding year |
+| CPT® | *(absent)* | states no creation year |
+
+An absent date is a fact about the citation, not a gap to fill from
+memory — secondary sources have fuller dates for several of these, and
+that is precisely why they are not recorded here.
+
+## Tests
+
+`test/` holds two suites: the catalog's own invariants, and a
+field-by-field parity check between the Clojure catalog and the Kotoba
+port (a catalog is exactly the shape where checking a sample only
+checks the entries someone already looked at).
+
+⚠ **Neither suite currently runs under `clojure -M:test`.** The
+2026-09-10 workspace-wide rename moved every source to `.kotoba`, and
+`cognitect.test-runner` discovers `.clj`/`.cljc` only — so the command
+exits 0 having run **zero tests**, which looks exactly like passing.
+Until this repo genuinely builds as Kotoba, the suites are run by
+placing the sources on a classpath under their Clojure extensions.
+Both were run that way against the six-entry catalog: 15 tests, 172
+assertions, plus seven deliberate mutations confirmed to turn it red.
 
 ## License
 
