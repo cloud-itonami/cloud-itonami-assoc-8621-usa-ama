@@ -86,7 +86,7 @@ field-by-field parity check between the Clojure catalog and the Kotoba
 port (a catalog is exactly the shape where checking a sample only
 checks the entries someone already looked at).
 
-⚠ **Neither suite currently runs under `clojure -M:test`.** The
+⚠ **Neither suite currently runs under `kbb -M:test`.** The
 2026-09-10 workspace-wide rename moved every source to `.kotoba`, and
 `cognitect.test-runner` discovers `.clj`/`.cljc` only — so the command
 exits 0 having run **zero tests**, which looks exactly like passing.
